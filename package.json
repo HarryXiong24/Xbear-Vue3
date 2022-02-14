@@ -1,5 +1,5 @@
 {
-  "name": "my-react",
+  "name": "typescript-webpack-start",
   "version": "1.0.0",
   "description": "A template for quickly developing projects with Typescript and Webpack.",
   "main": "index.js",
