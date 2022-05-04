@@ -1,3 +1,9 @@
+export interface Effect {
+  (...any: any[]): any;
+  deps: Array<Set<(...any: any[]) => any>>;
+  options: EffectOptions;
+}
+
 export interface EffectOptions {
   scheduler?: (...any: any[]) => any;
   lazy?: boolean;
@@ -5,12 +11,6 @@ export interface EffectOptions {
 
 export interface WatchOptions {
   immediate?: boolean;
-}
-
-export interface Effect {
-  (...any: any[]): any;
-  deps: Array<Set<(...any: any[]) => any>>;
-  options: EffectOptions;
 }
 
 export type KeyMap = Map<string, Set<Effect>>;
