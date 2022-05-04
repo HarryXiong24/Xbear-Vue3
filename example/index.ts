@@ -1,3 +1,3 @@
-import test from '../src/index';
+import test from './ProxySystem';
 
 test();
