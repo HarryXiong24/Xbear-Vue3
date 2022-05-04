@@ -1,8 +1,8 @@
-# Typescript-Webpack-Start
+# Xbear-Vue3
 
 ## Description
 
-A template for quickly developing projects with Typescript and Webpack.
+A mini-vue3 framework developed by Typescript.
 
 ## Usage
 
