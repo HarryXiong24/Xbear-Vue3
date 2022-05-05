@@ -2,7 +2,6 @@ import { Effect, EffectOptions, TargetMap } from './types';
 
 // 存储代理对象的桶
 const bucket: TargetMap = new WeakMap();
-
 // 通用 effect
 let activeEffect: Effect;
 // effect 栈，用来保存嵌套的 effect
@@ -13,10 +12,12 @@ export function effect(
   options: EffectOptions = {}
 ) {
   const effectFn: Effect = () => {
+    // 清楚遗留的副作用，防止不必要的更新
     cleanup(effectFn);
     // 当 effectFn 执行时，将其设置为当前激活的副作用函数
     activeEffect = effectFn;
     // 在调用副作用函数之前将当前副作用函数压入栈中
+    // 栈的引入是为了解决 effect 嵌套执行问题
     effectStack.push(effectFn);
     // 将 fn 的执行结果储存到 res 中
     const res = fn();
@@ -40,6 +41,7 @@ export function effect(
   return effectFn;
 }
 
+// 通过遍历副作用函数的 effectFn.deps 数组，将该副作用函数从依赖集合中删除，之后重置
 export function cleanup(effectFn: Effect) {
   // 遍历 deps 数组
   for (let i = 0; i < effectFn.deps.length; i++) {
@@ -67,9 +69,10 @@ export function track(target: Record<string, any>, key: string) {
   if (!deps) {
     depsMap.set(key, (deps = new Set<Effect>()));
   }
-  // 将当前副作用函数存入
+  // 将当前副作用函数存入依赖中，以作记录
   deps.add(activeEffect);
   // deps 就是一个与当前副作用函数存在练习的依赖集合
+  // 将收集的依赖，绑定在当前 activeEffect 上
   activeEffect.deps.push(deps);
 }
 
@@ -83,6 +86,7 @@ export function trigger(target: Record<string, any>, key: string) {
 
   // 创建一个副本，否则会出现无限执行的情况
   const effectsToRun = new Set<Effect>();
+  // 用来避免无限递归循环
   effects &&
     effects.forEach((effectFn) => {
       // 如果 trigger 触发执行的副作用函数与当前正在执行的副作用函数相同，则不触发执行
@@ -108,11 +112,13 @@ export function trigger(target: Record<string, any>, key: string) {
 export function reactive(data: Record<string, any>) {
   const obj = new Proxy(data, {
     get(target: Record<string, any>, key: string) {
+      // 读取的时候，追踪这个属性
       track(target, key);
       return target[key];
     },
     set(target: Record<string, any>, key: string, newValue: any) {
       target[key] = newValue;
+      // 触发变化
       trigger(target, key);
       return true;
     },
