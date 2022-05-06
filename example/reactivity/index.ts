@@ -2,11 +2,11 @@ import {
   reactive,
   computed,
   watch,
+  effect,
   ref,
   toRef,
   toRefs,
   proxyRefs,
-  effect,
 } from '@/reactivity';
 
 export default function test() {
@@ -16,6 +16,7 @@ export default function test() {
   toRefsTest();
 }
 
+// 测试 computed 和 watch
 function reactiveTest() {
   const obj = reactive({
     text: 'hello word',
@@ -39,6 +40,7 @@ function reactiveTest() {
   console.log('after operate', sum.value);
 }
 
+// 测试 ref
 function refTest() {
   const refVal = ref(100);
   effect(() => {
@@ -47,6 +49,7 @@ function refTest() {
   refVal.value++;
 }
 
+// 测试 toRef
 function toRefTest() {
   const obj = reactive({
     foo: 0,
@@ -63,6 +66,7 @@ function toRefTest() {
   foo.value++;
 }
 
+// 测试 toRefs
 function toRefsTest() {
   const obj = reactive({
     foo: 0,
