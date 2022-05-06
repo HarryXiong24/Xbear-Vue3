@@ -1,4 +1,4 @@
-import { reactive, computed, watch } from '@/ProxySystem';
+import { reactive, computed, watch } from '@/reactivity';
 
 export default function test() {
   const obj = reactive({

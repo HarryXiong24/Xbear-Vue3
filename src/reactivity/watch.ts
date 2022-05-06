@@ -1,4 +1,4 @@
-import { effect } from './reactivity';
+import { effect } from './reactive';
 import { WatchOptions } from './types';
 
 // 读取对象上的任意属性，使得任意属性发生变化的时候都能够触发回调函数的执行

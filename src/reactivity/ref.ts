@@ -1,4 +1,4 @@
-import { reactive } from './reactivity';
+import { reactive } from './reactive';
 
 // 实现原始值的响应式
 export function ref(value: any) {

@@ -1,4 +1,4 @@
-import { reactive } from './reactivity';
+import { reactive } from './reactive';
 import { computed } from './computed';
 import { watch } from './watch';
 

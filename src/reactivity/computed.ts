@@ -1,4 +1,4 @@
-import { effect, trigger } from './reactivity';
+import { effect, trigger } from './reactive';
 
 // 计算函数
 export function computed(getter: (...any: any[]) => any) {
