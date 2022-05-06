@@ -111,16 +111,22 @@ export function trigger(target: Record<string, any>, key: string) {
 // Map: key --> Set(effects list)
 export function reactive(data: Record<string, any>) {
   const obj = new Proxy(data, {
-    get(target: Record<string, any>, key: string) {
+    get(target: Record<string, any>, key: string, receiver: any) {
       // 读取的时候，追踪这个属性
       track(target, key);
-      return target[key];
+      return Reflect.get(target, key, receiver);
     },
-    set(target: Record<string, any>, key: string, newValue: any) {
+    set(
+      target: Record<string, any>,
+      key: string,
+      newValue: any,
+      receiver: any
+    ) {
+      const res = Reflect.set(target, key, newValue, receiver);
       target[key] = newValue;
       // 触发变化
       trigger(target, key);
-      return true;
+      return res;
     },
   });
   return obj;
