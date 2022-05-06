@@ -1,3 +1,3 @@
-import test from './ProxySystem';
+import test from './reactivity';
 
 test();

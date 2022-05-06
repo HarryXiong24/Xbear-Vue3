@@ -1,7 +1,7 @@
 import { reactive } from './reactive';
 
 // 实现原始值的响应式
-export function ref(value: any) {
+export function ref(value: any): { value: any } {
   const wrapper = {
     value,
   };
@@ -10,7 +10,7 @@ export function ref(value: any) {
   Object.defineProperty(wrapper, '__v_isRef', {
     value: true,
   });
-  return reactive(wrapper);
+  return reactive(wrapper) as { value: any };
 }
 
 // 用于为响应式对象上的 property 创建 ref
@@ -45,6 +45,7 @@ export function toRefs(obj: Record<string, any>) {
 }
 
 // 自动脱 ref
+// 由于 toRefs 会把第一层属性值转换为 ref，所以必须通过 value 属性访问值
 export function proxyRefs(obj: Record<string, any>) {
   return new Proxy(obj, {
     get(target: Record<string, any>, key: string, receiver: any) {
