@@ -137,6 +137,10 @@ export function reactive(data: Record<string, any>) {
   const obj = new Proxy(data, {
     // 代理读取
     get(target: Record<string, any>, key: string, receiver: any) {
+      // 代理对象可通过 raw 属性访问原始数据
+      if (key === 'raw') {
+        return target;
+      }
       // 读取的时候，追踪这个属性
       track(target, key);
       return Reflect.get(target, key, receiver);
@@ -157,14 +161,18 @@ export function reactive(data: Record<string, any>) {
         : 'ADD';
       // 设置属性值
       const res = Reflect.set(target, key, newValue, receiver);
-      // 比较新旧值，不相等，并且都不是 NaN 的时候才触发响应
-      if (
-        oldValue !== newValue &&
-        (oldValue === oldValue || newValue === newValue)
-      ) {
-        // 将 type 作为第三个属性值传给 trigger
-        // 触发变化
-        trigger(target, key, type);
+
+      // 判断 receiver 是不是 target 的代理对象
+      if (target === receiver.raw) {
+        // 比较新旧值，不相等，并且都不是 NaN 的时候才触发响应
+        if (
+          oldValue !== newValue &&
+          (oldValue === oldValue || newValue === newValue)
+        ) {
+          // 将 type 作为第三个属性值传给 trigger
+          // 触发变化
+          trigger(target, key, type);
+        }
       }
       return res;
     },
