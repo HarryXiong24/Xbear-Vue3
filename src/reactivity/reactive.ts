@@ -1,4 +1,4 @@
-import { Effect, EffectOptions, TargetMap } from './types';
+import { Effect, EffectOptions, TargetMap, TriggerType } from './types';
 
 // 存储代理对象的桶
 const bucket: TargetMap = new WeakMap();
@@ -6,6 +6,8 @@ const bucket: TargetMap = new WeakMap();
 let activeEffect: Effect;
 // effect 栈，用来保存嵌套的 effect
 const effectStack: Effect[] = [];
+// for ... in 代理的标志
+const ITERATE_KEY = Symbol();
 
 export function effect(
   fn: (...any: any[]) => any,
@@ -52,7 +54,7 @@ export function cleanup(effectFn: Effect) {
 }
 
 // 用于 get 函数中追踪变化
-export function track(target: Record<string, any>, key: string) {
+export function track(target: Record<string, any>, key: string | symbol) {
   // 没有 activeEffect 直接返回
   if (!activeEffect) {
     return;
@@ -77,11 +79,17 @@ export function track(target: Record<string, any>, key: string) {
 }
 
 // 用于 set 函数中触发变化
-export function trigger(target: Record<string, any>, key: string) {
+export function trigger(
+  target: Record<string, any>,
+  key: string | symbol,
+  type: TriggerType
+) {
   const depsMap = bucket.get(target);
   if (!depsMap) {
     return;
   }
+
+  // 取得与 key 相关联的副作用函数
   const effects = depsMap.get(key);
 
   // 创建一个副本，否则会出现无限执行的情况
@@ -94,6 +102,22 @@ export function trigger(target: Record<string, any>, key: string) {
         effectsToRun.add(effectFn);
       }
     });
+
+  // 只有当操作类型为 ADD 或 DELETE 时，才触发与 ITERATE_KEY 相关联的副作用函数执行
+  if (type === 'ADD' || type === 'DELETE') {
+    // 取得与 ITERATE_KEY 相关联的副作用函数
+    const iterateEffects = depsMap.get(ITERATE_KEY);
+
+    // 将与 ITERATE_KEY 相关联的副作用函数也添加到 effectsToRun
+    iterateEffects &&
+      iterateEffects.forEach((effectFn) => {
+        // 如果 trigger 触发执行的副作用函数与当前正在执行的副作用函数相同，则不触发执行
+        if (effectFn !== activeEffect) {
+          effectsToRun.add(effectFn);
+        }
+      });
+  }
+
   // 把收集的副作用都执行一遍
   effectsToRun.forEach((effectFn) => {
     // 如果一个副作用函数存在调度器，则调用该调度器，并将副作用函数作为参数传递
@@ -111,21 +135,61 @@ export function trigger(target: Record<string, any>, key: string) {
 // Map: key --> Set(effects list)
 export function reactive(data: Record<string, any>) {
   const obj = new Proxy(data, {
+    // 代理读取
     get(target: Record<string, any>, key: string, receiver: any) {
       // 读取的时候，追踪这个属性
       track(target, key);
       return Reflect.get(target, key, receiver);
     },
+    // 代理设置
     set(
       target: Record<string, any>,
       key: string,
       newValue: any,
       receiver: any
     ) {
+      // 先获取旧值
+      const oldValue = target[key];
+
+      // 如果属性不存在，则说明是在添加新属性，否则是设置已有属性
+      const type = Object.prototype.hasOwnProperty.call(target, key)
+        ? 'SET'
+        : 'ADD';
+      // 设置属性值
       const res = Reflect.set(target, key, newValue, receiver);
-      target[key] = newValue;
-      // 触发变化
-      trigger(target, key);
+      // 比较新旧值，不相等，并且都不是 NaN 的时候才触发响应
+      if (
+        oldValue !== newValue &&
+        (oldValue === oldValue || newValue === newValue)
+      ) {
+        // 将 type 作为第三个属性值传给 trigger
+        // 触发变化
+        trigger(target, key, type);
+      }
+      return res;
+    },
+    // 代理 xxx in obj
+    has(target: Record<string, any>, key: string) {
+      track(target, key);
+      return Reflect.has(target, key);
+    },
+    // 代理 for ... in 循环
+    ownKeys(target: Record<string, any>) {
+      // 因为 ownKeys 操作的参数里没有第二个 key 参数，所以我们要自己构造一个
+      // 将副作用函数与 ITERATE_KEY 关联
+      track(target, ITERATE_KEY);
+      return Reflect.ownKeys(target);
+    },
+    // 代理删除属性的操作
+    deleteProperty(target: Record<string, any>, key: string) {
+      // 检查被操作的属性是否是对象自己的属性
+      const hadKey = Object.prototype.hasOwnProperty.call(target, key);
+      // 完成删除操作
+      const res = Reflect.deleteProperty(target, key);
+      if (res && hadKey) {
+        // 只有当被删除的属性是对象自己的属性并成功删除时，才触发更新
+        trigger(target, key, 'DELETE');
+      }
       return res;
     },
   });
