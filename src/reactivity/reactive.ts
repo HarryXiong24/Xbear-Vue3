@@ -133,7 +133,11 @@ export function trigger(
 // 代理
 // WeakMap: target --> Map
 // Map: key --> Set(effects list)
-export function createReactive(data: Record<string, any>, isShallow = false) {
+export function createReactive(
+  data: Record<string, any>,
+  isShallow = false,
+  isReadonly = false
+) {
   const obj: Record<string, any> = new Proxy(data, {
     // 代理读取
     get(target: Record<string, any>, key: string, receiver: any) {
@@ -141,8 +145,11 @@ export function createReactive(data: Record<string, any>, isShallow = false) {
       if (key === 'raw') {
         return target;
       }
-      // 读取的时候，追踪这个属性
-      track(target, key);
+      // 判断是否是只读的，不是才需要建立响应式联系
+      if (!isReadonly) {
+        // 读取的时候，追踪这个属性
+        track(target, key);
+      }
       // 得到原始值的结果
       const res = Reflect.get(target, key, receiver);
 
@@ -154,7 +161,8 @@ export function createReactive(data: Record<string, any>, isShallow = false) {
       // 深响应
       if (typeof res === 'object' && res !== null) {
         // 深响应，让返回的对象仍然具有响应性
-        return reactive(res);
+        // 同时要注意 readonly 也要进行深只读操作
+        return isReadonly ? readonly(res) : reactive(res);
       }
 
       return res;
@@ -166,6 +174,12 @@ export function createReactive(data: Record<string, any>, isShallow = false) {
       newValue: any,
       receiver: any
     ) {
+      // 判断是否是只读的
+      if (isReadonly) {
+        console.warn(`This attribute ${key} is readonly!`);
+        return true;
+      }
+
       // 先获取旧值
       const oldValue = target[key];
 
@@ -204,6 +218,11 @@ export function createReactive(data: Record<string, any>, isShallow = false) {
     },
     // 代理删除属性的操作
     deleteProperty(target: Record<string, any>, key: string) {
+      // 判断是否是只读的
+      if (isReadonly) {
+        console.warn(`This attribute ${key} is readonly!`);
+        return true;
+      }
       // 检查被操作的属性是否是对象自己的属性
       const hadKey = Object.prototype.hasOwnProperty.call(target, key);
       // 完成删除操作
@@ -224,4 +243,12 @@ export function reactive(obj: Record<string, any>) {
 
 export function shallowReactive(obj: Record<string, any>) {
   return createReactive(obj, true);
+}
+
+export function readonly(obj: Record<string, any>) {
+  return createReactive(obj, true, true);
+}
+
+export function shallowReadonly(obj: Record<string, any>) {
+  return createReactive(obj, false, true);
 }
