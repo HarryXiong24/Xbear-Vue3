@@ -10,7 +10,17 @@ export function reactive_test() {
   });
 
   effect(() => {
-    console.log('reactive_test', obj.foo);
+    console.log('reactive_test, obj.foo', obj.foo);
+  });
+
+  effect(() => {
+    console.log('reactive_test, in', 'foo' in obj);
+  });
+
+  effect(() => {
+    for (const key in obj) {
+      console.log('reactive_test', key, obj[key]);
+    }
   });
 
   obj.foo++;
