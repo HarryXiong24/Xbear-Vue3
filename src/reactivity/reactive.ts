@@ -133,8 +133,8 @@ export function trigger(
 // 代理
 // WeakMap: target --> Map
 // Map: key --> Set(effects list)
-export function reactive(data: Record<string, any>) {
-  const obj = new Proxy(data, {
+export function createReactive(data: Record<string, any>, isShallow = false) {
+  const obj: Record<string, any> = new Proxy(data, {
     // 代理读取
     get(target: Record<string, any>, key: string, receiver: any) {
       // 代理对象可通过 raw 属性访问原始数据
@@ -143,7 +143,21 @@ export function reactive(data: Record<string, any>) {
       }
       // 读取的时候，追踪这个属性
       track(target, key);
-      return Reflect.get(target, key, receiver);
+      // 得到原始值的结果
+      const res = Reflect.get(target, key, receiver);
+
+      // 如果是浅响应，直接返回
+      if (isShallow) {
+        return res;
+      }
+
+      // 深响应
+      if (typeof res === 'object' && res !== null) {
+        // 深响应，让返回的对象仍然具有响应性
+        return reactive(res);
+      }
+
+      return res;
     },
     // 代理设置
     set(
@@ -202,4 +216,12 @@ export function reactive(data: Record<string, any>) {
     },
   });
   return obj;
+}
+
+export function reactive(obj: Record<string, any>) {
+  return createReactive(obj);
+}
+
+export function shallowReactive(obj: Record<string, any>) {
+  return createReactive(obj, true);
 }
