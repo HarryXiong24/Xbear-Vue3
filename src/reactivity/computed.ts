@@ -15,7 +15,7 @@ export function computed(getter: (...any: any[]) => any) {
       if (!dirty) {
         dirty = true;
         // 当计算属性依赖的响应式数据变化时，手动调用 trigger 函数触发响应
-        trigger(obj, 'value');
+        trigger(obj, 'value', 'SET');
       }
     },
   });
@@ -28,7 +28,7 @@ export function computed(getter: (...any: any[]) => any) {
         dirty = false;
       }
       // 当读取 value 时，收到调用 track 函数进行追踪
-      trigger(obj, 'value');
+      trigger(obj, 'value', 'SET');
       return value;
     },
   };
