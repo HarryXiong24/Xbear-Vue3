@@ -246,9 +246,9 @@ export function shallowReactive(obj: Record<string, any>) {
 }
 
 export function readonly(obj: Record<string, any>) {
-  return createReactive(obj, true, true);
+  return createReactive(obj, false, true);
 }
 
 export function shallowReadonly(obj: Record<string, any>) {
-  return createReactive(obj, false, true);
+  return createReactive(obj, true, true);
 }
