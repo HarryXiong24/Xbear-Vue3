@@ -1,5 +1,33 @@
 import { Effect, EffectOptions, TargetMap, TriggerType } from './types';
-import { arrayInstrumentations } from './array';
+
+const arrayInstrumentations: Record<string, any> = {};
+
+['includes', 'indexOf', 'lastIndexOf'].forEach((method: string) => {
+  // eslint-disable-next-line @typescript-eslint/unbound-method
+  const originMethod = Array.prototype[method as unknown as any];
+  arrayInstrumentations[method] = function (...args: any[]) {
+    // this 是代理对象，现在代理对象中查找，将结果存储到 res 中
+    let res = originMethod.apply(this, args);
+
+    if (res === false) {
+      // res 为 false 说明没找到，通过 this.raw 拿到原始数组，再去其中查找并更新 res 的值
+      res = originMethod.apply((this as unknown as any).raw, args);
+    }
+    return res;
+  };
+});
+
+let shouldTrack = true;
+
+['push', 'pop', 'shift', 'unshift', 'splice'].forEach((method) => {
+  const originMethod = Array.prototype[method as unknown as any];
+  arrayInstrumentations[method] = function (...args: any[]) {
+    shouldTrack = false;
+    const res = originMethod.apply(this, args);
+    shouldTrack = true;
+    return res;
+  };
+});
 
 // 存储代理对象的桶
 const bucket: TargetMap = new WeakMap();
@@ -57,7 +85,7 @@ export function cleanup(effectFn: Effect) {
 // 用于 get 函数中追踪变化
 export function track(target: Record<string, any>, key: string | symbol) {
   // 没有 activeEffect 直接返回
-  if (!activeEffect) {
+  if (!activeEffect || !shouldTrack) {
     return;
   }
   // 从 WeakMap 中取出当前对象（更新时情况）

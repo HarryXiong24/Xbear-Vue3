@@ -28,4 +28,15 @@ export function array_test() {
 
   console.log(arr2.includes(obj));
   console.log(arr2.indexOf(1));
+
+  const arr3 = reactive([]);
+  effect(() => {
+    arr3.push(1);
+  });
+  effect(() => {
+    arr3.push(2);
+  });
+  effect(() => {
+    console.log(arr3);
+  });
 }
