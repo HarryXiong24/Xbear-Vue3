@@ -5,9 +5,27 @@ export function array_test() {
   const arr = reactive([1, 2, 3]);
 
   effect(() => {
-    console.log('array_tes, value', arr[100]);
+    console.log('array_tes, value', arr[1]);
     console.log('array_tes, length', arr.length);
   });
 
-  arr.length = 0;
+  effect(() => {
+    for (const key in arr) {
+      console.log('array_tes, for ... in', key);
+    }
+  });
+
+  effect(() => {
+    for (const val of arr.values()) {
+      console.log('array_tes, for ... of', val);
+    }
+  });
+
+  arr.length = 1;
+
+  const obj = {};
+  const arr2 = reactive([obj, '1', 1]);
+
+  console.log(arr2.includes(obj));
+  console.log(arr2.indexOf(1));
 }

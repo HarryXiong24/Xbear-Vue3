@@ -1,4 +1,5 @@
 import { Effect, EffectOptions, TargetMap, TriggerType } from './types';
+import { arrayInstrumentations } from './array';
 
 // 存储代理对象的桶
 const bucket: TargetMap = new WeakMap();
@@ -139,7 +140,6 @@ export function trigger(
     // 对于索引大于或等于新的 length 元素，需要把所用相关联的副作用函数取出并添加到 effectsToRun 中待执行
     // eslint-disable-next-line @typescript-eslint/no-shadow
     depsMap.forEach((effects, key) => {
-      console.log('!!!', key, newValue);
       if ((key as string) >= newValue) {
         effects.forEach((effectFn) => {
           if (effectFn !== activeEffect) {
@@ -177,8 +177,18 @@ export function createReactive(
       if (key === 'raw') {
         return target;
       }
+
+      // 如果操作的对象是数组，且 key 存在与 arrayInstrumentation 上，那么返回定义在 arrayInstrumentation 的值
+      if (
+        Array.isArray(target) &&
+        (arrayInstrumentations as unknown as any).hasOwnProperty!(key)
+      ) {
+        return Reflect.get(arrayInstrumentations, key, receiver);
+      }
+
       // 判断是否是只读的，不是才需要建立响应式联系
-      if (!isReadonly) {
+      // 还要判断是不是 symbol
+      if (!isReadonly && typeof key !== 'symbol') {
         // 读取的时候，追踪这个属性
         track(target, key);
       }
@@ -251,7 +261,7 @@ export function createReactive(
     ownKeys(target: Record<string, any>) {
       // 因为 ownKeys 操作的参数里没有第二个 key 参数，所以我们要自己构造一个
       // 将副作用函数与 ITERATE_KEY 关联
-      track(target, ITERATE_KEY);
+      track(target, Array.isArray(target) ? 'length' : ITERATE_KEY);
       return Reflect.ownKeys(target);
     },
     // 代理删除属性的操作
