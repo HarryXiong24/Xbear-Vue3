@@ -1,5 +1,4 @@
-import { reactive, shallowReactive } from '@/reactivity';
-import { effect } from '../../src/reactivity/reactive';
+import { reactive, shallowReactive, effect } from '@/reactivity';
 
 // 测试 computed 和 watch
 export function shallowReactive_test() {
