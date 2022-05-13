@@ -1,3 +1,1 @@
-export default function test() {
-  console.log('a');
-}
+export * from './reactivity';

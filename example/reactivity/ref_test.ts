@@ -1,4 +1,4 @@
-import { effect, reactive, ref, toRef, toRefs } from '@/reactivity';
+import { effect, reactive, ref, toRef, toRefs } from '@/index';
 
 // 测试 ref
 export function ref_test() {

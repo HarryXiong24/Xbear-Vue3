@@ -1,4 +1,4 @@
-import { reactive, effect } from '@/reactivity';
+import { reactive, effect } from '@/index';
 
 // 测试 computed 和 watch
 export function array_test() {

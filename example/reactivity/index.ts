@@ -7,13 +7,13 @@ import { readonly_test } from './readonly_test';
 import { ref_test, toRefs_test, toRef_test } from './ref_test';
 
 export default function test() {
-  // reactive_test();
-  // compute_test();
-  // watch_test();
-  // shallowReactive_test();
-  // readonly_test();
+  reactive_test();
+  compute_test();
+  watch_test();
+  shallowReactive_test();
+  readonly_test();
   array_test();
-  // ref_test();
-  // toRef_test();
-  // toRefs_test();
+  ref_test();
+  toRef_test();
+  toRefs_test();
 }

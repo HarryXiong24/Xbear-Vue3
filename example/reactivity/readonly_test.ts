@@ -1,4 +1,4 @@
-import { readonly, shallowReadonly } from '@/reactivity';
+import { readonly, shallowReadonly } from '@/index';
 
 // 测试 computed 和 watch
 export function readonly_test() {
